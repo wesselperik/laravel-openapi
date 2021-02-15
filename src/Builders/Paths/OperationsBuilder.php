@@ -12,6 +12,7 @@ use Vyuldashev\LaravelOpenApi\Builders\Paths\Operation\CallbacksBuilder;
 use Vyuldashev\LaravelOpenApi\Builders\Paths\Operation\ParametersBuilder;
 use Vyuldashev\LaravelOpenApi\Builders\Paths\Operation\RequestBodyBuilder;
 use Vyuldashev\LaravelOpenApi\Builders\Paths\Operation\ResponsesBuilder;
+use Vyuldashev\LaravelOpenApi\Builders\Paths\Operation\SecuritySchemeBuilder;
 use Vyuldashev\LaravelOpenApi\RouteInformation;
 
 class OperationsBuilder
@@ -27,13 +28,15 @@ class OperationsBuilder
         ParametersBuilder $parametersBuilder,
         RequestBodyBuilder $requestBodyBuilder,
         ResponsesBuilder $responsesBuilder,
-        ExtensionsBuilder $extensionsBuilder
+        ExtensionsBuilder $extensionsBuilder,
+        SecuritySchemeBuilder $securitySchemeBuilder
     ) {
         $this->callbacksBuilder = $callbacksBuilder;
         $this->parametersBuilder = $parametersBuilder;
         $this->requestBodyBuilder = $requestBodyBuilder;
         $this->responsesBuilder = $responsesBuilder;
         $this->extensionsBuilder = $extensionsBuilder;
+        $this->securitySchemeBuilder = $securitySchemeBuilder;
     }
 
     /**
@@ -59,6 +62,10 @@ class OperationsBuilder
 
             $parameters = $this->parametersBuilder->build($route);
             $requestBody = $this->requestBodyBuilder->build($route);
+            
+            $securityScheme = $this->securitySchemeBuilder->build($route);
+            $securityRequirement = \GoldSpecDigital\ObjectOrientedOAS\Objects\SecurityRequirement::create()->securityScheme($securityScheme);
+            
             $responses = $this->responsesBuilder->build($route);
             $callbacks = $this->callbacksBuilder->build($route);
 
@@ -68,6 +75,8 @@ class OperationsBuilder
                 ->description($route->actionDocBlock->getDescription()->render() !== '' ? $route->actionDocBlock->getDescription()->render() : null)
                 ->summary($route->actionDocBlock->getSummary() !== '' ? $route->actionDocBlock->getSummary() : null)
                 ->operationId($operationId)
+                ->security($securityRequirement)
+                ->noSecurity($securityScheme ? false : true)
                 ->parameters(...$parameters)
                 ->requestBody($requestBody)
                 ->responses(...$responses)
